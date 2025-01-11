@@ -1,5 +1,6 @@
 package com.payrollservice.service;
 
+import com.payrollservice.model.EmployeePayrollAnalysis;
 import com.payrollservice.model.EmployeePayrollData;
 import com.payrollservice.exception.PayrollServiceException;
 import org.junit.Before;
@@ -80,5 +81,42 @@ public class EmployeePayrollServiceTest {
         } catch (PayrollServiceException e) {
             fail("Should not throw exception: " + e.getMessage());
         }
+    }
+    @Test
+    public void givenGender_WhenAnalyzed_ShouldReturnCorrectAnalysis() {
+        try {
+            // Test analysis for male employees
+            EmployeePayrollAnalysis maleAnalysis = 
+                employeePayrollService.getEmployeeAnalysisByGender('M');
+            assertNotNull(maleAnalysis);
+            assertTrue(maleAnalysis.getCount() > 0);
+            assertTrue(maleAnalysis.getAvgSalary() > 0);
+
+            // Test analysis for female employees
+            EmployeePayrollAnalysis femaleAnalysis = 
+                employeePayrollService.getEmployeeAnalysisByGender('F');
+            assertNotNull(femaleAnalysis);
+            assertTrue(femaleAnalysis.getCount() > 0);
+            assertTrue(femaleAnalysis.getAvgSalary() > 0);
+
+            // Verify that min salary is less than or equal to max salary
+            assertTrue(maleAnalysis.getMinSalary() <= maleAnalysis.getMaxSalary());
+            assertTrue(femaleAnalysis.getMinSalary() <= femaleAnalysis.getMaxSalary());
+
+            // Verify that average salary is between min and max
+            assertTrue(maleAnalysis.getAvgSalary() >= maleAnalysis.getMinSalary() &&
+                      maleAnalysis.getAvgSalary() <= maleAnalysis.getMaxSalary());
+            assertTrue(femaleAnalysis.getAvgSalary() >= femaleAnalysis.getMinSalary() &&
+                      femaleAnalysis.getAvgSalary() <= femaleAnalysis.getMaxSalary());
+
+        } catch (PayrollServiceException e) {
+            fail("Should not throw exception: " + e.getMessage());
+        }
+    }
+
+    @Test(expected = PayrollServiceException.class)
+    public void givenInvalidGender_WhenAnalyzed_ShouldThrowException() 
+            throws PayrollServiceException {
+        employeePayrollService.getEmployeeAnalysisByGender('X');
     }
 }

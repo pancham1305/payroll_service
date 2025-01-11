@@ -3,6 +3,7 @@ package com.payrollservice.service;
 import com.payrollservice.db.PayrollDBService;
 import com.payrollservice.model.EmployeePayrollData;
 import com.payrollservice.exception.PayrollServiceException;
+import com.payrollservice.model.EmployeePayrollAnalysis;
 import java.util.List;
 import java.time.LocalDate;
 
@@ -37,4 +38,13 @@ public class EmployeePayrollService {
         }
         return payrollDBService.getEmployeePayrollByDateRange(startDate, endDate);
     }
+
+    public EmployeePayrollAnalysis getEmployeeAnalysisByGender(char gender)
+            throws PayrollServiceException {
+        if (gender != 'M' && gender != 'F') {
+            throw new PayrollServiceException("Invalid gender specified: " + gender);
+        }
+        return payrollDBService.getEmployeeAnalysisByGender(gender);
+    }
+
 }
