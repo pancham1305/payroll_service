@@ -34,4 +34,54 @@ public class EmployeePayrollService {
 
         return employeePayrollList;
     }
+    public EmployeePayrollData updateEmployeeSalary(String name, double salary) throws PayrollServiceException {
+        String sql = "UPDATE employee_payroll SET salary = ? WHERE name = ?";
+        
+        try (Connection connection = PayrollDBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            
+            statement.setDouble(1, salary);
+            statement.setString(2, name);
+            
+            int rowsAffected = statement.executeUpdate();
+            if (rowsAffected == 0) {
+                throw new PayrollServiceException("Employee " + name + " not found");
+            }
+            
+            return getEmployeePayrollData(name);
+            
+        } catch (SQLException e) {
+            throw new PayrollServiceException("Error while updating employee salary", e);
+        }
+    }
+
+    public EmployeePayrollData getEmployeePayrollData(String name) throws PayrollServiceException {
+        String sql = "SELECT * FROM employee_payroll WHERE name = ?";
+        
+        try (Connection connection = PayrollDBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            
+            statement.setString(1, name);
+            
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return new EmployeePayrollData(
+                        resultSet.getInt("id"),
+                        resultSet.getString("name"),
+                        resultSet.getDouble("salary"),
+                        resultSet.getDate("start_date").toLocalDate()
+                    );
+                }
+                return null;
+            }
+        } catch (SQLException e) {
+            throw new PayrollServiceException("Error while retrieving employee data", e);
+        }
+    }
+
+    public boolean checkEmployeePayrollInSync(String name, double salary) throws PayrollServiceException {
+        EmployeePayrollData employeePayrollData = getEmployeePayrollData(name);
+        return employeePayrollData != null && 
+               Double.compare(employeePayrollData.getSalary(), salary) == 0;
+    }
 }
