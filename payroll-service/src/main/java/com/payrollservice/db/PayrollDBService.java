@@ -14,6 +14,7 @@ public class PayrollDBService {
     private PreparedStatement employeePayrollDataStatement;
     private PreparedStatement updateSalaryStatement;
     private Map<String, PreparedStatement> preparedStatementCache = new HashMap<>();
+    private PreparedStatement employeesByDateRangeStatement;
 
     private PayrollDBService() {
     }
@@ -41,7 +42,8 @@ public class PayrollDBService {
     private void prepareStatements(Connection connection) throws SQLException {
         String selectSQL = "SELECT * FROM employee_payroll WHERE name = ?";
         String updateSQL = "UPDATE employee_payroll SET salary = ? WHERE name = ?";
-
+        String dateRangeSQL = "SELECT * FROM employee_payroll WHERE start_date BETWEEN ? AND ?";
+        employeesByDateRangeStatement = connection.prepareStatement(dateRangeSQL);
         employeePayrollDataStatement = connection.prepareStatement(selectSQL);
         updateSalaryStatement = connection.prepareStatement(updateSQL);
     }
@@ -117,4 +119,33 @@ public class PayrollDBService {
             throw new PayrollServiceException("Error while retrieving employee data", e);
         }
     }
+
+    public List<EmployeePayrollData> getEmployeePayrollByDateRange(LocalDate startDate, LocalDate endDate)
+            throws PayrollServiceException {
+        List<EmployeePayrollData> employeePayrollList = new ArrayList<>();
+
+        try (Connection connection = PayrollDBConnection.getConnection()) {
+            if (employeesByDateRangeStatement == null) {
+                prepareStatements(connection);
+            }
+
+            employeesByDateRangeStatement.setDate(1, Date.valueOf(startDate));
+            employeesByDateRangeStatement.setDate(2, Date.valueOf(endDate));
+
+            try (ResultSet resultSet = employeesByDateRangeStatement.executeQuery()) {
+                while (resultSet.next()) {
+                    employeePayrollList.add(getEmployeePayrollDataFromResultSet(resultSet));
+                }
+            }
+
+        } catch (SQLException e) {
+            throw new PayrollServiceException(
+                    "Error while retrieving employee data for date range: " +
+                            startDate + " to " + endDate,
+                    e);
+        }
+
+        return employeePayrollList;
+    }
+
 }
